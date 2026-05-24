@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { createClient } from "@supabase/supabase-js";
-// Obscena Portal v1.3 - Malandra
+// Obscena Portal v1.4 - Malandra
 
 /* ── Supabase ── */
 const supabase = createClient(
-  "https://pxosnmkydmymyzcxsnol.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4b2FubWt5ZG15bXl6Y3hzbm9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MzQ2NjIsImV4cCI6MjA5NTExMDY2Mn0.gBL2DqH-8AB4knmoWnwU60Tfaf3TzIXNQSSYlArmb5E"
+  "https://yztciaxsneabtayfxijq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6dGNpYXhzbmVhYnRheWZ4aWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDc2NDIsImV4cCI6MjA5NTIyMzY0Mn0.01tfOk1mIH3_zyVxO2DGCa0gOMxrhWUblpuFah5QjAs"
 );
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');`;
@@ -201,7 +201,6 @@ export default function ObscenaPortal() {
   });
   const [obras, setObras] = useState([mkObra()]);
 
-  /* ── Load ── */
   useEffect(() => {
     (async () => {
       try {
@@ -218,7 +217,6 @@ export default function ObscenaPortal() {
     })();
   }, []);
 
-  /* ── Auto-save (debounced 1s) ── */
   useEffect(() => {
     if (!ready) return;
     const t = setTimeout(async () => {
@@ -232,7 +230,6 @@ export default function ObscenaPortal() {
     return () => clearTimeout(t);
   }, [artista, obras, step, ready]);
 
-  /* ── Helpers ── */
   const setA = (k, v) => setArtista(p => ({ ...p, [k]: v }));
   const setO = (id, k, v) => setObras(p => p.map(o => o.id === id ? { ...o, [k]: v } : o));
 
@@ -247,7 +244,6 @@ export default function ObscenaPortal() {
     return next;
   });
 
-  /* ── Validation ── */
   const validateArtista = () => {
     const e = {};
     if (!artista.nome.trim())                          e.nome     = "Campo obrigatório";
@@ -270,7 +266,6 @@ export default function ObscenaPortal() {
     setErrors(e); return !Object.keys(e).length;
   };
 
-  /* ── Actions ── */
   const handleAddObra = () => {
     if (!validateOpenObra()) return;
     setErrors({});
@@ -353,7 +348,6 @@ export default function ObscenaPortal() {
     setObras([mkObra()]); setStep(0); setSubmitted(false); setAgreed(false); setErrors({});
   };
 
-  /* ── Excel download ── */
   const downloadExcel = () => {
     const rows = [
       ["DADOS DO ARTISTA", ""],
@@ -388,12 +382,11 @@ export default function ObscenaPortal() {
     XLSX.writeFile(wb, `inventario_${slug}_obscena.xlsx`);
   };
 
-  /* ── Totals ── */
   const totalPecas      = obras.reduce((s,o)=>s+(+o.quantidade||0),0);
   const totalValorPub   = obras.reduce((s,o)=>s+((+o.preco||0)*(+o.quantidade||0)),0);
   const totalParaArtista= obras.reduce((s,o)=>s+(parseFloat(artistShare(o.preco))*(+o.quantidade||0)),0);
 
-  const fmtTime = d => d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "";
+  const fmtTime = d => d ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : "";
 
   if (!ready) return (
     <div style={{background:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",color:"#ccc",fontSize:"11px",letterSpacing:"2px"}}>
@@ -405,8 +398,6 @@ export default function ObscenaPortal() {
     <>
       <style>{FONT}{CSS}</style>
       <div className="portal">
-
-        {/* ── Header ── */}
         <div className="hdr">
           <div className="hdr-inner">
             <span className="hdr-brand">Obscena</span>
@@ -416,7 +407,6 @@ export default function ObscenaPortal() {
         </div>
 
         {submitted ? (
-          /* ══ CONFIRMAÇÃO ══ */
           <div className="ok">
             <div className="ok-icon"><Ic.Check /></div>
             <div className="ok-title">Inventário enviado</div>
@@ -425,10 +415,10 @@ export default function ObscenaPortal() {
             </p>
             <div className="ok-sum">
               {[
-                ["Artista",        artista.nomeArtistico || artista.nome],
-                ["Email",          artista.email],
-                ["Artigos",        `${obras.length}`],
-                ["Peças",          `${totalPecas}`],
+                ["Artista", artista.nomeArtistico || artista.nome],
+                ["Email", artista.email],
+                ["Artigos", `${obras.length}`],
+                ["Peças", `${totalPecas}`],
               ].map(([l,v]) => (
                 <div key={l} className="ok-row">
                   <span className="ok-row-lbl">{l}</span>
@@ -445,7 +435,6 @@ export default function ObscenaPortal() {
           </div>
         ) : (
           <>
-            {/* ── Progress ── */}
             <div className="prog">
               <div className="prog-inner">
               {STEPS.map((s,i) => (
@@ -458,14 +447,9 @@ export default function ObscenaPortal() {
             </div>
 
             <div className="wrap">
-
-              {/* ══ STEP 0: Artista ══ */}
               {step === 0 && <>
                 <div className="stitle">Os teus dados</div>
-                <p className="sdesc">
-                  Informações de contacto e dados necessários para processarmos o teu pagamento após a feira.
-                </p>
-
+                <p className="sdesc">Informações de contacto e dados necessários para processarmos o teu pagamento após a feira.</p>
                 <div className="g2">
                   <div className="fld">
                     <label className="lbl">Nome completo <span className="req">*</span></label>
@@ -501,7 +485,6 @@ export default function ObscenaPortal() {
                     {errors.iban && <div className="em">{errors.iban}</div>}
                   </div>
                 </div>
-
                 <div className="navrow" style={{justifyContent:"flex-end"}}>
                   <button className="btn-next-circle" onClick={handleNext0}>
                     Continuar
@@ -510,18 +493,12 @@ export default function ObscenaPortal() {
                 </div>
               </>}
 
-              {/* ══ STEP 1: Obras ══ */}
               {step === 1 && <>
                 <div className="stitle">Os teus artigos</div>
-                <p className="sdesc">
-                  Adiciona todos os artigos que vais entregar. Quantidade 1 para peça única, ou o número de exemplares disponíveis para prints e publicações. O teu rascunho é guardado automaticamente.
-                </p>
-
+                <p className="sdesc">Adiciona todos os artigos que vais entregar. Quantidade 1 para peça única, ou o número de exemplares disponíveis para prints e publicações. O teu rascunho é guardado automaticamente.</p>
                 <div className="obra-list">
                 {obras.map((obra, idx) => (
                   <div key={obra.id} className={`obra-item${obra.open?" is-open":""}`}>
-
-                    {/* Header — changes based on open/closed */}
                     {obra.open ? (
                       <div className="obra-hdr-open" onClick={() => collapseObra(obra.id)}>
                         <span className="obra-open-num">Artigo {pad(idx+1)}</span>
@@ -541,25 +518,20 @@ export default function ObscenaPortal() {
                         <span className="or-price">€{parseFloat(obra.preco||0).toFixed(2)}</span>
                         <span className="or-ic"><Ic.Edit /></span>
                         {obras.length > 1 && (
-                          <span className="or-ic-del" onClick={e=>{e.stopPropagation();removeObra(obra.id);}}
-                            title="Eliminar obra">
+                          <span className="or-ic-del" onClick={e=>{e.stopPropagation();removeObra(obra.id);}} title="Eliminar obra">
                             <Ic.X />
                           </span>
                         )}
                       </div>
                     )}
-
-                    {/* Animated body */}
                     <div className="obra-expand">
                       <div className="obra-expand-inner">
                         <div className="obra-expand-content">
-
                           <div className="fld">
                             <label className="lbl">Título / Identificação <span className="req">*</span></label>
                             <input className={`inp${errors[`${obra.id}_t`]?" e":""}`} value={obra.titulo} onChange={e=>setO(obra.id,"titulo",e.target.value)} placeholder="" />
                             {errors[`${obra.id}_t`] && <div className="em">{errors[`${obra.id}_t`]}</div>}
                           </div>
-
                           <div className="g3">
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Categoria <span className="req">*</span></label>
@@ -572,9 +544,7 @@ export default function ObscenaPortal() {
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Preço público (€) <span className="req">*</span></label>
                               <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
-                              <div className="hint" style={{minHeight:18}}>
-                                Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça
-                              </div>
+                              <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
                               {errors[`${obra.id}_p`] && <div className="em">{errors[`${obra.id}_p`]}</div>}
                             </div>
                             <div className="fld" style={{marginBottom:0}}>
@@ -583,26 +553,21 @@ export default function ObscenaPortal() {
                               <div style={{minHeight:18}}>{errors[`${obra.id}_q`] && <div className="em">{errors[`${obra.id}_q`]}</div>}</div>
                             </div>
                           </div>
-
                           <div className="fld">
                             <label className="lbl">Descrição <span className="req">*</span></label>
                             <textarea className={`ta${errors[`${obra.id}_d`]?" e":""}`} value={obra.descricao} onChange={e=>setO(obra.id,"descricao",e.target.value)} placeholder="Técnica, materiais, dimensões, contexto..." />
                             {errors[`${obra.id}_d`] && <div className="em">{errors[`${obra.id}_d`]}</div>}
                           </div>
-
                           <div className="fld">
                             <label className="lbl">Observações</label>
                             <textarea className="ta" style={{minHeight:52}} value={obra.observacoes} onChange={e=>setO(obra.id,"observacoes",e.target.value)} placeholder="Notas adicionais para a organização (frágil, não empilhar, etc.)" />
                           </div>
-
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
                 </div>
-
-                {/* Action buttons — outside the article containers */}
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:16, paddingTop:20, borderTop:"1px solid #ebebeb"}}>
                   <button className="btn-next-circle" style={{fontSize:12}} onClick={handleAddObra}>
                     <span className="btn-circle" style={{width:30, height:30, background:"#e4e4e1"}}><span style={{color:"#111"}}><Ic.Plus /></span></span>
@@ -613,35 +578,29 @@ export default function ObscenaPortal() {
                     <span className="btn-circle"><Ic.Arrow /></span>
                   </button>
                 </div>
-
-                {/* Saved indicator */}
                 {lastSaved && (
                   <div className="saved-bar">
                     <Ic.Disk /> Rascunho guardado às {fmtTime(lastSaved)} — podes fechar e voltar mais tarde
                   </div>
                 )}
-
                 <div className="navrow" style={{marginTop:20}}>
                   <button className="bbk" onClick={()=>{setErrors({});setStep(0);}}>← Voltar</button>
                 </div>
               </>}
 
-              {/* ══ STEP 2: Rever & Enviar ══ */}
               {step === 2 && <>
                 <div className="stitle">Rever & Enviar</div>
                 <p className="sdesc">Confirma que tudo está correcto antes de enviares o teu inventário à Malandra.</p>
-
-                {/* Artista */}
                 <div className="rev-sec">
                   <div className="rev-sec-title">Dados do artista</div>
                   <div className="rev-grid">
                     {[
-                      ["Nome completo",  artista.nome],
+                      ["Nome completo", artista.nome],
                       ["Nome artístico", artista.nomeArtistico||"—"],
-                      ["Email",          artista.email],
-                      ["Contacto",       artista.contacto],
-                      ["NIF",            artista.nif],
-                      ["IBAN",           artista.iban],
+                      ["Email", artista.email],
+                      ["Contacto", artista.contacto],
+                      ["NIF", artista.nif],
+                      ["IBAN", artista.iban],
                     ].map(([l,v])=>(
                       <div key={l} className="rev-f">
                         <span className="rev-lbl">{l}</span>
@@ -650,8 +609,6 @@ export default function ObscenaPortal() {
                     ))}
                   </div>
                 </div>
-
-                {/* Artigos */}
                 <div className="rev-sec">
                   <div className="rev-sec-title">Artigos</div>
                   <div style={{display:"flex", gap:16, padding:"12px 0", marginBottom:16, borderBottom:"1px solid #ebebeb"}}>
@@ -672,8 +629,6 @@ export default function ObscenaPortal() {
                     </div>
                   ))}
                 </div>
-
-                {/* Agreement */}
                 <div className="agree" onClick={()=>{setAgreed(p=>!p);setErrors({});}}>
                   <div className={`abox${agreed?" chk":""}`}>{agreed&&<Ic.Check/>}</div>
                   <div className="atxt">
@@ -682,7 +637,6 @@ export default function ObscenaPortal() {
                 </div>
                 {errors.agree && <div className="em-agree">{errors.agree}</div>}
                 {submitError && <div className="em-agree" style={{marginTop:8}}>{submitError}</div>}
-
                 <div className="navrow">
                   <button className="bbk" onClick={handleBackToObras} disabled={submitting}>← Voltar</button>
                   <button className="btn-dl" onClick={downloadExcel} disabled={submitting}><Ic.Dl /> Excel</button>
@@ -692,7 +646,6 @@ export default function ObscenaPortal() {
                   </button>
                 </div>
               </>}
-
             </div>
           </>
         )}
