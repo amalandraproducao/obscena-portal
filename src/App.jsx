@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { createClient } from "@supabase/supabase-js";
-// Obscena Portal v1.4 - Malandra
+// Obscena Portal v1.5 - Malandra
 
 /* ── Supabase ── */
 const supabase = createClient(
@@ -14,7 +14,7 @@ const FONT = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@4
 const CATEGORIAS = ["Ilustração","Desenho","Pintura","Design Gráfico","Livro / Publicação","Fotografia","Outra"];
 const COMM = 0.10;
 const pad = n => String(n).padStart(2, "0");
-const mkObra = () => ({ id:`${Date.now()}-${Math.random().toString(36).slice(2)}`, titulo:"", categoria:"", preco:"", quantidade:"1", descricao:"", observacoes:"", open:true });
+const mkObra = () => ({ id:`${Date.now()}-${Math.random().toString(36).slice(2)}`, titulo:"", categoria:"", preco:"", quantidade:"1", descricao:"", observacoes:"", oferta:false, open:true });
 const artistShare = p => ((parseFloat(p) || 0) * (1 - COMM)).toFixed(2);
 
 const Ic = {
@@ -26,6 +26,7 @@ const Ic = {
   ChUp: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
   Dl:   () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   Disk: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Gift: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
 };
 
 const STEPS = ["Dados do artista", "Artigos", "Rever & Enviar"];
@@ -69,22 +70,27 @@ const CSS = `
 .em { font-size: 11px; color: #d00; margin-top: 4px; }
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .g3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; align-items: start; }
+.g2-price { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
 .hint { font-size: 12px; color: #666; margin-top: 6px; white-space: nowrap; }
 .hint strong { color: #111; font-weight: 500; }
 
+.oferta-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f0f0ee; border-radius: 8px; cursor: pointer; user-select: none; margin-bottom: 18px; transition: background .12s; }
+.oferta-toggle:hover { background: #e8e8e5; }
+.oferta-toggle.active { background: #e8f4e8; }
+.oferta-box { width: 15px; height: 15px; background: #d4d4d1; flex-shrink: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.oferta-toggle.active .oferta-box { background: #2a7a2a; color: #fff; }
+.oferta-lbl { font-size: 12px; color: #555; line-height: 1.5; }
+.oferta-toggle.active .oferta-lbl { color: #1a5a1a; font-weight: 500; }
+.oferta-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #2a7a2a; background: #e8f4e8; padding: 2px 7px; border-radius: 4px; }
+
 .obra-list { display: flex; flex-direction: column; gap: 6px; }
 .obra-item { background: #f0f0ee; border-radius: 12px; overflow: hidden; }
+.obra-item.is-oferta { background: #f0f6f0; }
 
-.obra-hdr-closed {
-  display: flex; align-items: center; gap: 14px;
-  padding: 13px 16px; cursor: pointer; user-select: none;
-  border-radius: 12px; transition: background .12s;
-}
+.obra-hdr-closed { display: flex; align-items: center; gap: 14px; padding: 13px 16px; cursor: pointer; user-select: none; border-radius: 12px; transition: background .12s; }
 .obra-hdr-closed:hover { background: #e8e8e5; }
-.obra-hdr-open {
-  display: flex; align-items: center; gap: 14px;
-  padding: 13px 16px; cursor: pointer; user-select: none; transition: background .12s;
-}
+.obra-item.is-oferta .obra-hdr-closed:hover { background: #e0eee0; }
+.obra-hdr-open { display: flex; align-items: center; gap: 14px; padding: 13px 16px; cursor: pointer; user-select: none; transition: background .12s; }
 .obra-hdr-open:hover { background: #eaeae7; }
 
 .or-num { font-size: 11px; color: #999; width: 22px; flex-shrink: 0; font-weight: 500; }
@@ -110,20 +116,15 @@ const CSS = `
 .obra-expand-content .inp:focus,
 .obra-expand-content .sel:focus,
 .obra-expand-content .ta:focus { background: #f8f8f6; }
-
-.obra-actions { display: flex; gap: 10px; margin-top: 16px; }
-.btn-add { flex: 1; background: #e4e4e1; border: none; color: #333; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 10px 14px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .12s; }
-.btn-add:hover { background: #d8d8d5; }
-.btn-review { flex: 1.5; background: #111; border: none; color: #fff; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 10px 14px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .12s; }
-.btn-review:hover { background: #333; }
+.obra-item.is-oferta .obra-expand-content .inp,
+.obra-item.is-oferta .obra-expand-content .sel,
+.obra-item.is-oferta .obra-expand-content .ta { background: #f8fff8; }
 
 .saved-bar { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #bbb; margin-top: 14px; }
 
 .navrow { display: flex; gap: 10px; margin-top: 40px; }
 .bbk { background: #f0f0ee; border: none; color: #555; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 11px 20px; cursor: pointer; border-radius: 8px; transition: background .12s; }
 .bbk:hover { background: #e4e4e1; color: #111; }
-.bnxt { flex: 1; background: #111; border: none; color: #fff; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 11px 20px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .12s; }
-.bnxt:hover { background: #333; }
 .btn-dl { background: #f0f0ee; border: none; color: #555; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 11px 16px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 6px; transition: background .12s; white-space: nowrap; }
 .btn-dl:hover { background: #e4e4e1; color: #111; }
 
@@ -134,12 +135,8 @@ const CSS = `
 .rev-f + .rev-f { border-top: 1px solid #ebebeb; }
 .rev-lbl { font-size: 12px; color: #888; }
 .rev-val { font-size: 13px; color: #111; }
-.rev-totals { display: flex; background: #f0f0ee; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
-.rev-tot { flex: 1; padding: 16px 18px; }
-.rev-tot + .rev-tot { border-left: 1px solid #e4e4e1; }
-.rev-tot-lbl { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #999; margin-bottom: 5px; }
-.rev-tot-val { font-size: 18px; font-weight: 500; }
 .rev-obra { background: #f6f6f4; padding: 14px 16px; margin-bottom: 8px; border-radius: 10px; }
+.rev-obra.is-oferta { background: #f0f8f0; }
 .rev-obra-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
 .rev-obra-title { font-size: 14px; font-weight: 500; }
 .rev-obra-price { font-size: 13px; color: #666; flex-shrink: 0; }
@@ -177,11 +174,9 @@ const CSS = `
 
 @media (max-width: 560px) {
   .wrap { padding: 28px 14px; }
-  .g2, .g3 { grid-template-columns: 1fr; }
+  .g2, .g3, .g2-price { grid-template-columns: 1fr; }
   .hdr, .prog-inner { padding-left: 14px; padding-right: 14px; }
   .or-cat { display: none; }
-  .obra-actions { flex-direction: column; }
-  .rev-totals { flex-direction: column; }
   .navrow { flex-wrap: wrap; }
 }
 `;
@@ -197,7 +192,7 @@ export default function ObscenaPortal() {
   const [submitError, setSubmitError] = useState(null);
 
   const [artista, setArtista] = useState({
-    nome:"", nomeArtistico:"", email:"", contacto:"", nif:"", iban:""
+    nome:"", nomeArtistico:"", email:"", contacto:"", nif:""
   });
   const [obras, setObras] = useState([mkObra()]);
 
@@ -219,7 +214,7 @@ export default function ObscenaPortal() {
 
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(async () => {
+    const t = setTimeout(() => {
       try {
         localStorage.setItem("obs_a", JSON.stringify(artista));
         localStorage.setItem("obs_o", JSON.stringify(obras));
@@ -246,11 +241,10 @@ export default function ObscenaPortal() {
 
   const validateArtista = () => {
     const e = {};
-    if (!artista.nome.trim())                          e.nome     = "Campo obrigatório";
-    if (!/\S+@\S+\.\S+/.test(artista.email))           e.email    = "Email inválido";
-    if (!artista.contacto.trim())                      e.contacto = "Campo obrigatório";
-    if (!/^\d{9}$/.test(artista.nif.replace(/\s/g,""))) e.nif    = "Deve ter 9 dígitos";
-    if (!artista.iban.trim())                          e.iban     = "Campo obrigatório";
+    if (!artista.nome.trim())                            e.nome     = "Campo obrigatório";
+    if (!/\S+@\S+\.\S+/.test(artista.email))             e.email    = "Email inválido";
+    if (!artista.contacto.trim())                        e.contacto = "Campo obrigatório";
+    if (!/^\d{9}$/.test(artista.nif.replace(/\s/g,""))) e.nif      = "Deve ter 9 dígitos";
     setErrors(e); return !Object.keys(e).length;
   };
 
@@ -258,11 +252,11 @@ export default function ObscenaPortal() {
     const open = obras.find(o => o.open);
     if (!open) return true;
     const e = {}, id = open.id;
-    if (!open.titulo.trim())                          e[`${id}_t`] = "Obrigatório";
-    if (!open.categoria)                              e[`${id}_c`] = "Obrigatório";
-    if (!open.preco || +open.preco <= 0)              e[`${id}_p`] = "Preço inválido";
-    if (!open.quantidade || +open.quantidade < 1)     e[`${id}_q`] = "Mín. 1";
-    if (!open.descricao.trim())                       e[`${id}_d`] = "Obrigatório";
+    if (!open.titulo.trim())                        e[`${id}_t`] = "Obrigatório";
+    if (!open.categoria)                            e[`${id}_c`] = "Obrigatório";
+    if (!open.oferta && (!open.preco || +open.preco <= 0)) e[`${id}_p`] = "Preço inválido";
+    if (!open.quantidade || +open.quantidade < 1)   e[`${id}_q`] = "Mín. 1";
+    if (!open.descricao.trim())                     e[`${id}_d`] = "Obrigatório";
     setErrors(e); return !Object.keys(e).length;
   };
 
@@ -304,7 +298,6 @@ export default function ObscenaPortal() {
           email: artista.email,
           contacto: artista.contacto,
           nif: artista.nif,
-          iban: artista.iban,
           token
         })
         .select();
@@ -315,10 +308,11 @@ export default function ObscenaPortal() {
         artista_id: artistaId,
         titulo: o.titulo,
         categoria: o.categoria,
-        preco: parseFloat(o.preco),
+        preco: o.oferta ? 0 : parseFloat(o.preco),
         quantidade: parseInt(o.quantidade),
         descricao: o.descricao,
-        observacoes: o.observacoes || null
+        observacoes: o.observacoes || null,
+        oferta: o.oferta
       }));
       const { error: artigosError } = await supabase
         .from("artigos")
@@ -339,12 +333,12 @@ export default function ObscenaPortal() {
     }
   };
 
-  const handleReset = async () => {
+  const handleReset = () => {
     try {
       for (const k of ["obs_a","obs_o","obs_s","obs_done","obs_sub"])
         localStorage.removeItem(k);
     } catch {}
-    setArtista({ nome:"", nomeArtistico:"", email:"", contacto:"", nif:"", iban:"" });
+    setArtista({ nome:"", nomeArtistico:"", email:"", contacto:"", nif:"" });
     setObras([mkObra()]); setStep(0); setSubmitted(false); setAgreed(false); setErrors({});
   };
 
@@ -356,35 +350,37 @@ export default function ObscenaPortal() {
       ["Email", artista.email],
       ["Contacto", artista.contacto],
       ["NIF", artista.nif],
-      ["IBAN", artista.iban],
       ["", ""],
       ["INVENTÁRIO — OBSCENA"],
-      ["Nº","Título","Categoria","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
+      ["Nº","Título","Categoria","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
       ...obras.map((o,i) => [
         i+1, o.titulo, o.categoria,
-        parseFloat(o.preco)||0,
-        parseFloat(artistShare(o.preco)),
+        o.oferta ? "Oferta" : "Venda",
+        o.oferta ? "—" : (parseFloat(o.preco)||0),
+        o.oferta ? "—" : parseFloat(artistShare(o.preco)),
         parseInt(o.quantidade)||1,
-        (parseFloat(artistShare(o.preco))*(parseInt(o.quantidade)||1)).toFixed(2),
+        o.oferta ? "—" : (parseFloat(artistShare(o.preco))*(parseInt(o.quantidade)||1)).toFixed(2),
         o.descricao, o.observacoes||""
       ]),
       [""],
-      ["Nº de obras", obras.length],
+      ["Nº de artigos", obras.length],
       ["Total de peças", obras.reduce((s,o)=>s+(parseInt(o.quantidade)||0),0)],
+      ["Artigos para venda", obras.filter(o=>!o.oferta).length],
+      ["Artigos para oferta", obras.filter(o=>o.oferta).length],
       ["Valor total público (€)", totalValorPub.toFixed(2)],
       ["Total para artista (€)", totalParaArtista.toFixed(2)],
     ];
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{wch:20},{wch:32},{wch:20},{wch:18},{wch:22},{wch:12},{wch:18},{wch:40},{wch:30}];
+    ws["!cols"] = [{wch:20},{wch:32},{wch:20},{wch:10},{wch:18},{wch:22},{wch:12},{wch:18},{wch:40},{wch:30}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventário");
     const slug = (artista.nomeArtistico||artista.nome||"artista").replace(/\s+/g,"_").toLowerCase();
     XLSX.writeFile(wb, `inventario_${slug}_obscena.xlsx`);
   };
 
-  const totalPecas      = obras.reduce((s,o)=>s+(+o.quantidade||0),0);
-  const totalValorPub   = obras.reduce((s,o)=>s+((+o.preco||0)*(+o.quantidade||0)),0);
-  const totalParaArtista= obras.reduce((s,o)=>s+(parseFloat(artistShare(o.preco))*(+o.quantidade||0)),0);
+  const totalPecas       = obras.reduce((s,o)=>s+(+o.quantidade||0),0);
+  const totalValorPub    = obras.filter(o=>!o.oferta).reduce((s,o)=>s+((+o.preco||0)*(+o.quantidade||0)),0);
+  const totalParaArtista = obras.filter(o=>!o.oferta).reduce((s,o)=>s+(parseFloat(artistShare(o.preco))*(+o.quantidade||0)),0);
 
   const fmtTime = d => d ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : "";
 
@@ -416,9 +412,9 @@ export default function ObscenaPortal() {
             <div className="ok-sum">
               {[
                 ["Artista", artista.nomeArtistico || artista.nome],
-                ["Email", artista.email],
+                ["Email",   artista.email],
                 ["Artigos", `${obras.length}`],
-                ["Peças", `${totalPecas}`],
+                ["Peças",   `${totalPecas}`],
               ].map(([l,v]) => (
                 <div key={l} className="ok-row">
                   <span className="ok-row-lbl">{l}</span>
@@ -427,9 +423,7 @@ export default function ObscenaPortal() {
               ))}
             </div>
             <div className="ok-actions">
-              <button className="btn-dl" onClick={downloadExcel}>
-                <Ic.Dl /> Descarregar inventário Excel
-              </button>
+              <button className="btn-dl" onClick={downloadExcel}><Ic.Dl /> Descarregar inventário Excel</button>
               <button className="btn-reset" onClick={handleReset}>Recomeçar do início</button>
             </div>
           </div>
@@ -447,9 +441,12 @@ export default function ObscenaPortal() {
             </div>
 
             <div className="wrap">
+
+              {/* ══ STEP 0: Artista ══ */}
               {step === 0 && <>
                 <div className="stitle">Os teus dados</div>
-                <p className="sdesc">Informações de contacto e dados necessários para processarmos o teu pagamento após a feira.</p>
+                <p className="sdesc">Informações de contacto e dados necessários para a tua participação na Obscena.</p>
+
                 <div className="g2">
                   <div className="fld">
                     <label className="lbl">Nome completo <span className="req">*</span></label>
@@ -473,18 +470,12 @@ export default function ObscenaPortal() {
                     {errors.contacto && <div className="em">{errors.contacto}</div>}
                   </div>
                 </div>
-                <div className="g2">
-                  <div className="fld">
-                    <label className="lbl">NIF <span className="req">*</span></label>
-                    <input className={`inp${errors.nif?" e":""}`} value={artista.nif} onChange={e=>setA("nif",e.target.value)} placeholder="123456789" maxLength={9} />
-                    {errors.nif && <div className="em">{errors.nif}</div>}
-                  </div>
-                  <div className="fld">
-                    <label className="lbl">IBAN <span className="req">*</span></label>
-                    <input className={`inp${errors.iban?" e":""}`} value={artista.iban} onChange={e=>setA("iban",e.target.value)} placeholder="PT50 0000 0000 0000 0000 0000 0" />
-                    {errors.iban && <div className="em">{errors.iban}</div>}
-                  </div>
+                <div className="fld" style={{maxWidth:280}}>
+                  <label className="lbl">NIF <span className="req">*</span></label>
+                  <input className={`inp${errors.nif?" e":""}`} value={artista.nif} onChange={e=>setA("nif",e.target.value)} placeholder="123456789" maxLength={9} />
+                  {errors.nif && <div className="em">{errors.nif}</div>}
                 </div>
+
                 <div className="navrow" style={{justifyContent:"flex-end"}}>
                   <button className="btn-next-circle" onClick={handleNext0}>
                     Continuar
@@ -493,19 +484,23 @@ export default function ObscenaPortal() {
                 </div>
               </>}
 
+              {/* ══ STEP 1: Obras ══ */}
               {step === 1 && <>
                 <div className="stitle">Os teus artigos</div>
-                <p className="sdesc">Adiciona todos os artigos que vais entregar. Quantidade 1 para peça única, ou o número de exemplares disponíveis para prints e publicações. O teu rascunho é guardado automaticamente.</p>
+                <p className="sdesc">Adiciona todos os artigos que vais entregar. Para peças únicas usa quantidade 1; para prints ou publicações indica o número de exemplares. O rascunho é guardado automaticamente.</p>
+
                 <div className="obra-list">
                 {obras.map((obra, idx) => (
-                  <div key={obra.id} className={`obra-item${obra.open?" is-open":""}`}>
+                  <div key={obra.id} className={`obra-item${obra.open?" is-open":""}${obra.oferta?" is-oferta":""}`}>
+
                     {obra.open ? (
                       <div className="obra-hdr-open" onClick={() => collapseObra(obra.id)}>
                         <span className="obra-open-num">Artigo {pad(idx+1)}</span>
+                        {obra.oferta && <span className="oferta-badge"><Ic.Gift /> Oferta</span>}
                         <span className="hdr-spacer" />
                         {obras.length > 1 && (
                           <button className="btn-rm" onClick={e=>{e.stopPropagation();removeObra(obra.id);}}>
-                            <Ic.X /> Remover artigo
+                            <Ic.X /> Remover
                           </button>
                         )}
                         <span className="or-ic" style={{marginLeft:4}}><Ic.ChUp /></span>
@@ -515,24 +510,41 @@ export default function ObscenaPortal() {
                         <span className="or-num">{pad(idx+1)}</span>
                         <span className="or-title">{obra.titulo||"Novo artigo"}</span>
                         <span className="or-cat">{obra.categoria}</span>
-                        <span className="or-price">€{parseFloat(obra.preco||0).toFixed(2)}</span>
+                        {obra.oferta
+                          ? <span className="oferta-badge"><Ic.Gift /> Oferta</span>
+                          : <span className="or-price">€{parseFloat(obra.preco||0).toFixed(2)}</span>
+                        }
                         <span className="or-ic"><Ic.Edit /></span>
                         {obras.length > 1 && (
-                          <span className="or-ic-del" onClick={e=>{e.stopPropagation();removeObra(obra.id);}} title="Eliminar obra">
+                          <span className="or-ic-del" onClick={e=>{e.stopPropagation();removeObra(obra.id);}}>
                             <Ic.X />
                           </span>
                         )}
                       </div>
                     )}
+
                     <div className="obra-expand">
                       <div className="obra-expand-inner">
                         <div className="obra-expand-content">
+
+                          {/* Oferta toggle */}
+                          <div
+                            className={`oferta-toggle${obra.oferta?" active":""}`}
+                            onClick={() => setO(obra.id, "oferta", !obra.oferta)}
+                          >
+                            <div className="oferta-box">{obra.oferta && <Ic.Check />}</div>
+                            <div className="oferta-lbl">
+                              <strong>Este artigo é uma oferta</strong> — não está à venda (ex: stickers, marcadores de livro, amostras)
+                            </div>
+                          </div>
+
                           <div className="fld">
                             <label className="lbl">Título / Identificação <span className="req">*</span></label>
                             <input className={`inp${errors[`${obra.id}_t`]?" e":""}`} value={obra.titulo} onChange={e=>setO(obra.id,"titulo",e.target.value)} placeholder="" />
                             {errors[`${obra.id}_t`] && <div className="em">{errors[`${obra.id}_t`]}</div>}
                           </div>
-                          <div className="g3">
+
+                          <div className={obra.oferta ? "g2-price" : "g3"}>
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Categoria <span className="req">*</span></label>
                               <select className={`sel${errors[`${obra.id}_c`]?" e":""}`} value={obra.categoria} onChange={e=>setO(obra.id,"categoria",e.target.value)}>
@@ -541,33 +553,41 @@ export default function ObscenaPortal() {
                               </select>
                               <div style={{minHeight:18}}>{errors[`${obra.id}_c`] && <div className="em">{errors[`${obra.id}_c`]}</div>}</div>
                             </div>
-                            <div className="fld" style={{marginBottom:0}}>
-                              <label className="lbl">Preço público (€) <span className="req">*</span></label>
-                              <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
-                              <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
-                              {errors[`${obra.id}_p`] && <div className="em">{errors[`${obra.id}_p`]}</div>}
-                            </div>
+
+                            {!obra.oferta && (
+                              <div className="fld" style={{marginBottom:0}}>
+                                <label className="lbl">Preço público (€) <span className="req">*</span></label>
+                                <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
+                                <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
+                                {errors[`${obra.id}_p`] && <div className="em">{errors[`${obra.id}_p`]}</div>}
+                              </div>
+                            )}
+
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Quantidade <span className="req">*</span></label>
                               <input className={`inp${errors[`${obra.id}_q`]?" e":""}`} type="number" min="1" step="1" value={obra.quantidade} onChange={e=>setO(obra.id,"quantidade",e.target.value)} placeholder="1" />
                               <div style={{minHeight:18}}>{errors[`${obra.id}_q`] && <div className="em">{errors[`${obra.id}_q`]}</div>}</div>
                             </div>
                           </div>
+
                           <div className="fld">
                             <label className="lbl">Descrição <span className="req">*</span></label>
                             <textarea className={`ta${errors[`${obra.id}_d`]?" e":""}`} value={obra.descricao} onChange={e=>setO(obra.id,"descricao",e.target.value)} placeholder="Técnica, materiais, dimensões, contexto..." />
                             {errors[`${obra.id}_d`] && <div className="em">{errors[`${obra.id}_d`]}</div>}
                           </div>
+
                           <div className="fld">
                             <label className="lbl">Observações</label>
                             <textarea className="ta" style={{minHeight:52}} value={obra.observacoes} onChange={e=>setO(obra.id,"observacoes",e.target.value)} placeholder="Notas adicionais para a organização (frágil, não empilhar, etc.)" />
                           </div>
+
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
                 </div>
+
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:16, paddingTop:20, borderTop:"1px solid #ebebeb"}}>
                   <button className="btn-next-circle" style={{fontSize:12}} onClick={handleAddObra}>
                     <span className="btn-circle" style={{width:30, height:30, background:"#e4e4e1"}}><span style={{color:"#111"}}><Ic.Plus /></span></span>
@@ -578,29 +598,32 @@ export default function ObscenaPortal() {
                     <span className="btn-circle"><Ic.Arrow /></span>
                   </button>
                 </div>
+
                 {lastSaved && (
                   <div className="saved-bar">
                     <Ic.Disk /> Rascunho guardado às {fmtTime(lastSaved)} — podes fechar e voltar mais tarde
                   </div>
                 )}
+
                 <div className="navrow" style={{marginTop:20}}>
                   <button className="bbk" onClick={()=>{setErrors({});setStep(0);}}>← Voltar</button>
                 </div>
               </>}
 
+              {/* ══ STEP 2: Rever & Enviar ══ */}
               {step === 2 && <>
                 <div className="stitle">Rever & Enviar</div>
                 <p className="sdesc">Confirma que tudo está correcto antes de enviares o teu inventário à Malandra.</p>
+
                 <div className="rev-sec">
                   <div className="rev-sec-title">Dados do artista</div>
                   <div className="rev-grid">
                     {[
-                      ["Nome completo", artista.nome],
+                      ["Nome completo",  artista.nome],
                       ["Nome artístico", artista.nomeArtistico||"—"],
-                      ["Email", artista.email],
-                      ["Contacto", artista.contacto],
-                      ["NIF", artista.nif],
-                      ["IBAN", artista.iban],
+                      ["Email",          artista.email],
+                      ["Contacto",       artista.contacto],
+                      ["NIF",            artista.nif],
                     ].map(([l,v])=>(
                       <div key={l} className="rev-f">
                         <span className="rev-lbl">{l}</span>
@@ -609,34 +632,44 @@ export default function ObscenaPortal() {
                     ))}
                   </div>
                 </div>
+
                 <div className="rev-sec">
                   <div className="rev-sec-title">Artigos</div>
                   <div style={{display:"flex", gap:16, padding:"12px 0", marginBottom:16, borderBottom:"1px solid #ebebeb"}}>
                     <span style={{fontSize:13, color:"#888"}}><strong style={{color:"#111", fontWeight:500}}>{obras.length}</strong> {obras.length===1?"artigo":"artigos"}</span>
                     <span style={{color:"#ddd"}}>·</span>
                     <span style={{fontSize:13, color:"#888"}}><strong style={{color:"#111", fontWeight:500}}>{totalPecas}</strong> peças</span>
+                    {obras.some(o=>o.oferta) && <>
+                      <span style={{color:"#ddd"}}>·</span>
+                      <span style={{fontSize:13, color:"#2a7a2a"}}><strong style={{fontWeight:500}}>{obras.filter(o=>o.oferta).length}</strong> para oferta</span>
+                    </>}
                   </div>
                   {obras.map(o=>(
-                    <div key={o.id} className="rev-obra">
+                    <div key={o.id} className={`rev-obra${o.oferta?" is-oferta":""}`}>
                       <div className="rev-obra-top">
                         <span className="rev-obra-title">{o.titulo}</span>
-                        <span className="rev-obra-price">€{parseFloat(o.preco).toFixed(2)} × {o.quantidade}</span>
+                        {o.oferta
+                          ? <span className="oferta-badge"><Ic.Gift /> Oferta</span>
+                          : <span className="rev-obra-price">€{parseFloat(o.preco).toFixed(2)} × {o.quantidade}</span>
+                        }
                       </div>
-                      <div className="rev-obra-share">Recebes €{artistShare(o.preco)} por peça</div>
-                      <div className="rev-obra-meta">{o.categoria}</div>
+                      {!o.oferta && <div className="rev-obra-share">Recebes €{artistShare(o.preco)} por peça</div>}
+                      <div className="rev-obra-meta">{o.categoria}{o.oferta ? "" : ""} · {o.quantidade} {o.quantidade===1||o.quantidade==="1"?"peça":"peças"}</div>
                       <div className="rev-obra-desc">{o.descricao}</div>
                       {o.observacoes && <div className="rev-obra-obs">Obs: {o.observacoes}</div>}
                     </div>
                   ))}
                 </div>
+
                 <div className="agree" onClick={()=>{setAgreed(p=>!p);setErrors({});}}>
                   <div className={`abox${agreed?" chk":""}`}>{agreed&&<Ic.Check/>}</div>
                   <div className="atxt">
-                    Confirmo que as informações são correctas e autorizo a Malandra a vender as artigos listados durante a Obscena, nas condições acordadas (comissão de {COMM*100}% sobre o preço de venda).
+                    Confirmo que as informações são correctas e autorizo a Malandra a vender os artigos listados durante a Obscena, nas condições acordadas (comissão de {COMM*100}% sobre o preço de venda).
                   </div>
                 </div>
                 {errors.agree && <div className="em-agree">{errors.agree}</div>}
                 {submitError && <div className="em-agree" style={{marginTop:8}}>{submitError}</div>}
+
                 <div className="navrow">
                   <button className="bbk" onClick={handleBackToObras} disabled={submitting}>← Voltar</button>
                   <button className="btn-dl" onClick={downloadExcel} disabled={submitting}><Ic.Dl /> Excel</button>
@@ -646,6 +679,7 @@ export default function ObscenaPortal() {
                   </button>
                 </div>
               </>}
+
             </div>
           </>
         )}
