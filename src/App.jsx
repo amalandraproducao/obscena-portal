@@ -74,13 +74,11 @@ const CSS = `
 .hint { font-size: 12px; color: #666; margin-top: 6px; white-space: nowrap; }
 .hint strong { color: #111; font-weight: 500; }
 
-.oferta-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f0f0ee; border-radius: 8px; cursor: pointer; user-select: none; margin-bottom: 18px; transition: background .12s; }
-.oferta-toggle:hover { background: #e8e8e5; }
-.oferta-toggle.active { background: #e8f4e8; }
-.oferta-box { width: 15px; height: 15px; background: #d4d4d1; flex-shrink: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
-.oferta-toggle.active .oferta-box { background: #2a7a2a; color: #fff; }
-.oferta-lbl { font-size: 12px; color: #555; line-height: 1.5; }
-.oferta-toggle.active .oferta-lbl { color: #1a5a1a; font-weight: 500; }
+.oferta-chk-label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #888; cursor: pointer; user-select: none; }
+.oferta-chk-label:hover { color: #444; }
+.oferta-chk-label.on { color: #2a7a2a; }
+.oferta-chk { width: 13px; height: 13px; background: #d4d4d1; flex-shrink: 0; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; transition: all .15s; }
+.oferta-chk.on { background: #2a7a2a; color: #fff; }
 .oferta-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #2a7a2a; background: #e8f4e8; padding: 2px 7px; border-radius: 4px; }
 
 .obra-list { display: flex; flex-direction: column; gap: 6px; }
@@ -192,7 +190,7 @@ export default function ObscenaPortal() {
   const [submitError, setSubmitError] = useState(null);
 
   const [artista, setArtista] = useState({
-    nome:"", nomeArtistico:"", email:"", contacto:"", nif:""
+    nome:"", nomeArtistico:"", email:"", contacto:""
   });
   const [obras, setObras] = useState([mkObra()]);
 
@@ -244,7 +242,6 @@ export default function ObscenaPortal() {
     if (!artista.nome.trim())                            e.nome     = "Campo obrigatório";
     if (!/\S+@\S+\.\S+/.test(artista.email))             e.email    = "Email inválido";
     if (!artista.contacto.trim())                        e.contacto = "Campo obrigatório";
-    if (!/^\d{9}$/.test(artista.nif.replace(/\s/g,""))) e.nif      = "Deve ter 9 dígitos";
     setErrors(e); return !Object.keys(e).length;
   };
 
@@ -338,7 +335,7 @@ export default function ObscenaPortal() {
       for (const k of ["obs_a","obs_o","obs_s","obs_done","obs_sub"])
         localStorage.removeItem(k);
     } catch {}
-    setArtista({ nome:"", nomeArtistico:"", email:"", contacto:"", nif:"" });
+    setArtista({ nome:"", nomeArtistico:"", email:"", contacto:"" });
     setObras([mkObra()]); setStep(0); setSubmitted(false); setAgreed(false); setErrors({});
   };
 
@@ -349,7 +346,6 @@ export default function ObscenaPortal() {
       ["Nome artístico", artista.nomeArtistico || "—"],
       ["Email", artista.email],
       ["Contacto", artista.contacto],
-      ["NIF", artista.nif],
       ["", ""],
       ["INVENTÁRIO — OBSCENA"],
       ["Nº","Título","Categoria","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
@@ -470,12 +466,6 @@ export default function ObscenaPortal() {
                     {errors.contacto && <div className="em">{errors.contacto}</div>}
                   </div>
                 </div>
-                <div className="fld" style={{maxWidth:280}}>
-                  <label className="lbl">NIF <span className="req">*</span></label>
-                  <input className={`inp${errors.nif?" e":""}`} value={artista.nif} onChange={e=>setA("nif",e.target.value)} placeholder="123456789" maxLength={9} />
-                  {errors.nif && <div className="em">{errors.nif}</div>}
-                </div>
-
                 <div className="navrow" style={{justifyContent:"flex-end"}}>
                   <button className="btn-next-circle" onClick={handleNext0}>
                     Continuar
@@ -527,24 +517,13 @@ export default function ObscenaPortal() {
                       <div className="obra-expand-inner">
                         <div className="obra-expand-content">
 
-                          {/* Oferta toggle */}
-                          <div
-                            className={`oferta-toggle${obra.oferta?" active":""}`}
-                            onClick={() => setO(obra.id, "oferta", !obra.oferta)}
-                          >
-                            <div className="oferta-box">{obra.oferta && <Ic.Check />}</div>
-                            <div className="oferta-lbl">
-                              <strong>Este artigo é uma oferta</strong> — não está à venda (ex: stickers, marcadores de livro, amostras)
-                            </div>
-                          </div>
-
                           <div className="fld">
                             <label className="lbl">Título / Identificação <span className="req">*</span></label>
                             <input className={`inp${errors[`${obra.id}_t`]?" e":""}`} value={obra.titulo} onChange={e=>setO(obra.id,"titulo",e.target.value)} placeholder="" />
                             {errors[`${obra.id}_t`] && <div className="em">{errors[`${obra.id}_t`]}</div>}
                           </div>
 
-                          <div className={obra.oferta ? "g2-price" : "g3"}>
+                          <div className="g3">
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Categoria <span className="req">*</span></label>
                               <select className={`sel${errors[`${obra.id}_c`]?" e":""}`} value={obra.categoria} onChange={e=>setO(obra.id,"categoria",e.target.value)}>
@@ -554,14 +533,24 @@ export default function ObscenaPortal() {
                               <div style={{minHeight:18}}>{errors[`${obra.id}_c`] && <div className="em">{errors[`${obra.id}_c`]}</div>}</div>
                             </div>
 
-                            {!obra.oferta && (
-                              <div className="fld" style={{marginBottom:0}}>
-                                <label className="lbl">Preço público (€) <span className="req">*</span></label>
-                                <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
-                                <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
-                                {errors[`${obra.id}_p`] && <div className="em">{errors[`${obra.id}_p`]}</div>}
+                            <div className="fld" style={{marginBottom:0}}>
+                              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6}}>
+                                <span className="lbl" style={{margin:0}}>{obra.oferta ? <span style={{color:"#bbb"}}>Preço (€)</span> : <>Preço público (€) <span className="req">*</span></>}</span>
+                                <span className={`oferta-chk-label${obra.oferta?" on":""}`} onClick={() => setO(obra.id, "oferta", !obra.oferta)}>
+                                  <span className={`oferta-chk${obra.oferta?" on":""}`}>{obra.oferta && <Ic.Check />}</span>
+                                  Oferta
+                                </span>
                               </div>
-                            )}
+                              {obra.oferta ? (
+                                <div style={{padding:"10px 14px", background:"#f0f0ee", borderRadius:8, fontSize:13, color:"#bbb"}}>—</div>
+                              ) : (
+                                <>
+                                  <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
+                                  <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
+                                </>
+                              )}
+                              {errors[`${obra.id}_p`] && !obra.oferta && <div className="em">{errors[`${obra.id}_p`]}</div>}
+                            </div>
 
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Quantidade <span className="req">*</span></label>
@@ -623,7 +612,6 @@ export default function ObscenaPortal() {
                       ["Nome artístico", artista.nomeArtistico||"—"],
                       ["Email",          artista.email],
                       ["Contacto",       artista.contacto],
-                      ["NIF",            artista.nif],
                     ].map(([l,v])=>(
                       <div key={l} className="rev-f">
                         <span className="rev-lbl">{l}</span>
