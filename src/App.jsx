@@ -28,7 +28,7 @@ const Ic = {
   Gift: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
 };
 
-const STEPS = ["Dados do artista", "Artigos", "Rever & Enviar"];
+const STEPS = ["1 — Os teus dados", "2 — Artigos", "3 — Rever e enviar"];
 
 const CSS = `
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -394,7 +394,7 @@ export default function ObscenaPortal() {
           <div className="hdr-inner">
             <span className="hdr-brand">Obscena</span>
             <div className="hdr-sep" />
-            <span className="hdr-sub">Portal do artista · Malandra</span>
+            <span className="hdr-sub">Submissão de Inventário</span>
           </div>
         </div>
 
@@ -441,12 +441,12 @@ export default function ObscenaPortal() {
               {/* ══ STEP 0: Artista ══ */}
               {step === 0 && <>
                 <div className="stitle">Os teus dados</div>
-                <p className="sdesc">Informações de contacto e dados necessários para a tua participação na Obscena.</p>
+                <p className="sdesc">Preenche os campos com os teus dados para identificação. No campo «nome artístico», indica-nos o nome pelo qual queres ser identificado/a no mercado.</p>
 
                 <div className="g2">
                   <div className="fld">
                     <label className="lbl">Nome completo <span className="req">*</span></label>
-                    <input className={`inp${errors.nome?" e":""}`} value={artista.nome} onChange={e=>setA("nome",e.target.value)} placeholder="Ana Silva" />
+                    <input className={`inp${errors.nome?" e":""}`} value={artista.nome} onChange={e=>setA("nome",e.target.value)} placeholder="" />
                     {errors.nome && <div className="em">{errors.nome}</div>}
                   </div>
                   <div className="fld">
@@ -457,12 +457,12 @@ export default function ObscenaPortal() {
                 <div className="g2">
                   <div className="fld">
                     <label className="lbl">Email <span className="req">*</span></label>
-                    <input className={`inp${errors.email?" e":""}`} type="email" value={artista.email} onChange={e=>setA("email",e.target.value)} placeholder="ana@email.com" />
+                    <input className={`inp${errors.email?" e":""}`} type="email" value={artista.email} onChange={e=>setA("email",e.target.value)} placeholder="" />
                     {errors.email && <div className="em">{errors.email}</div>}
                   </div>
                   <div className="fld">
                     <label className="lbl">Contacto <span className="req">*</span></label>
-                    <input className={`inp${errors.contacto?" e":""}`} value={artista.contacto} onChange={e=>setA("contacto",e.target.value)} placeholder="+351 912 345 678" />
+                    <input className={`inp${errors.contacto?" e":""}`} value={artista.contacto} onChange={e=>setA("contacto",e.target.value)} placeholder="" />
                     {errors.contacto && <div className="em">{errors.contacto}</div>}
                   </div>
                 </div>
@@ -477,7 +477,7 @@ export default function ObscenaPortal() {
               {/* ══ STEP 1: Obras ══ */}
               {step === 1 && <>
                 <div className="stitle">Os teus artigos</div>
-                <p className="sdesc">Adiciona todos os artigos que vais entregar. Para peças únicas usa quantidade 1; para prints ou publicações indica o número de exemplares. O rascunho é guardado automaticamente.</p>
+                <p className="sdesc">Adiciona todos os artigos que vais enviar para o mercado de arte da Obscena. Para cada artigo, indica o preço de venda ao público. A tua parte (90%) é calculada automaticamente.</p>
 
                 <div className="obra-list">
                 {obras.map((obra, idx) => (
@@ -591,8 +591,8 @@ export default function ObscenaPortal() {
 
               {/* ══ STEP 2: Rever & Enviar ══ */}
               {step === 2 && <>
-                <div className="stitle">Rever & Enviar</div>
-                <p className="sdesc">Confirma que tudo está correcto antes de enviares o teu inventário à Malandra.</p>
+                <div className="stitle">Rever e enviar</div>
+                <p className="sdesc">Confirma que tudo está correcto antes de enviares o teu inventário.</p>
 
                 <div className="rev-sec">
                   <div className="rev-sec-title">Dados do artista</div>
