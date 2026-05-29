@@ -302,7 +302,6 @@ export default function ObscenaPortal() {
       const artigosPayload = obras.map(o => ({
         artista_id: artistaId,
         titulo: o.titulo,
-        categoria: o.categoria,
         preco: o.oferta ? 0 : parseFloat(o.preco),
         quantidade: parseInt(o.quantidade),
         descricao: o.descricao,
