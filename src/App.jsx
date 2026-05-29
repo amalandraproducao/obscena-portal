@@ -318,6 +318,9 @@ export default function ObscenaPortal() {
         localStorage.setItem("obs_sub", JSON.stringify({ artista, obras, ts: new Date().toISOString() }));
       } catch {}
 
+      supabase.functions.invoke("notify-submission", { body: { artista, obras } })
+        .catch(e => console.error("Erro na notificação:", e));
+
       setSubmitted(true);
     } catch (e) {
       setSubmitError("Ocorreu um erro ao enviar o inventário. Verifica a tua ligação e tenta novamente.");
