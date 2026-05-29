@@ -1,4 +1,4 @@
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,22 +36,20 @@ Deno.serve(async (req) => {
       listaArtigos,
     ].join("\n");
 
-    const client = new SmtpClient();
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: Deno.env.get("GMAIL_USER")!,
-      password: Deno.env.get("GMAIL_APP_PASSWORD")!,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: Deno.env.get("GMAIL_USER"),
+        pass: Deno.env.get("GMAIL_APP_PASSWORD"),
+      },
     });
 
-    await client.send({
-      from: Deno.env.get("GMAIL_USER")!,
+    await transporter.sendMail({
+      from: Deno.env.get("GMAIL_USER"),
       to: "a.malandra.producao@gmail.com",
       subject: "Nova submissão de inventário - Obscena",
-      content: corpo,
+      text: corpo,
     });
-
-    await client.close();
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
