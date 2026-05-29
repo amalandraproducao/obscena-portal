@@ -340,38 +340,70 @@ export default function ObscenaPortal() {
   };
 
   const downloadExcel = () => {
+    const ROW_DADOS      = 0;
+    const ROW_INVENTARIO = 6;
+    const ROW_HEADER     = 7;
+    const ROW_OBRAS_START = 8;
+
     const rows = [
       ["DADOS DO ARTISTA", ""],
       ["Nome", artista.nome],
       ["Nome artístico", artista.nomeArtistico || "—"],
       ["Email", artista.email],
       ["Contacto", artista.contacto],
-      ["", ""],
+      [""],
       ["INVENTÁRIO — OBSCENA"],
-      ["Nº","Título","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
+      ["Nº","Título","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Descrição","Observações"],
       ...obras.map((o,i) => [
         i+1, o.titulo,
         o.oferta ? "Oferta" : "Venda",
         o.oferta ? "—" : (parseFloat(o.preco)||0),
         o.oferta ? "—" : parseFloat(artistShare(o.preco)),
         parseInt(o.quantidade)||1,
-        o.oferta ? "—" : (parseFloat(artistShare(o.preco))*(parseInt(o.quantidade)||1)).toFixed(2),
         o.descricao, o.observacoes||""
       ]),
       [""],
       ["Nº de artigos", obras.length],
       ["Total de peças", obras.reduce((s,o)=>s+(parseInt(o.quantidade)||0),0)],
-      ["Artigos para venda", obras.filter(o=>!o.oferta).length],
-      ["Artigos para oferta", obras.filter(o=>o.oferta).length],
-      ["Valor total público (€)", totalValorPub.toFixed(2)],
-      ["Total para artista (€)", totalParaArtista.toFixed(2)],
     ];
+
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{wch:20},{wch:32},{wch:10},{wch:18},{wch:22},{wch:12},{wch:18},{wch:40},{wch:30}];
+    ws["!cols"] = [{wch:20},{wch:32},{wch:10},{wch:18},{wch:22},{wch:12},{wch:40},{wch:30}];
+
+    // Columns D, E, F (indices 3,4,5) → centered
+    const centeredCols = new Set([3, 4, 5]);
+    const ROW_OBRAS_END = ROW_OBRAS_START + obras.length - 1;
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const ref = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[ref]) ws[ref] = { t: "z", v: "" };
+
+        let fill;
+        let bold = false;
+        if (R === ROW_DADOS || R === ROW_INVENTARIO) {
+          bold = true;
+          fill = { patternType: "solid", fgColor: { rgb: "F2F2F2" } };
+        } else if (R === ROW_HEADER) {
+          bold = true;
+          fill = { patternType: "solid", fgColor: { rgb: "DDEEFF" } };
+        } else if (R >= ROW_OBRAS_START && R <= ROW_OBRAS_END && (R - ROW_OBRAS_START) % 2 === 1) {
+          fill = { patternType: "solid", fgColor: { rgb: "F9F9F9" } };
+        }
+
+        ws[ref].s = {
+          font: { bold },
+          alignment: { horizontal: centeredCols.has(C) ? "center" : "left" },
+          ...(fill ? { fill } : {}),
+        };
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventário");
     const slug = (artista.nomeArtistico||artista.nome||"artista").replace(/\s+/g,"_").toLowerCase();
-    XLSX.writeFile(wb, `inventario_${slug}_obscena.xlsx`);
+    XLSX.writeFile(wb, `inventario_${slug}_obscena.xlsx`, { cellStyles: true });
   };
 
   const totalPecas       = obras.reduce((s,o)=>s+(+o.quantidade||0),0);
