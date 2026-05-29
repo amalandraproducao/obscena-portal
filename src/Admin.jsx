@@ -186,17 +186,20 @@ body { font-family: 'Inter', sans-serif; font-size: 13px; background: #f4f4f2; c
 .fat-stats { background: #fff; border-radius: 12px; border: 1px solid #e4e4e4; padding: 14px 16px; position: sticky; top: 0; }
 .fat-stats-title { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #555; margin-bottom: 12px; }
 
-.inv-artista { background: #fff; border-radius: 12px; border: 1px solid #e4e4e4; overflow: hidden; margin-bottom: 7px; }
-.inv-ahdr { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; transition: background .12s; }
-.inv-ahdr:hover { background: #f8f8f6; }
-.inv-acode { font-size: 11px; font-weight: 600; color: #777; min-width: 20px; }
-.inv-anome { font-weight: 500; flex: 1; color: #111; }
+.inv-container { background: #fff; border-radius: 12px; border: 1px solid #e4e4e4; overflow: hidden; }
+.inv-hdr-row { display: grid; grid-template-columns: 90px 1fr 90px 80px 80px; position: sticky; top: 0; z-index: 2; border-bottom: 1px solid #e0e0e0; }
+.inv-hdr-row > span { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: #666; padding: 9px 14px; background: #f8f8f6; }
+.inv-section { border-top: 1px solid #e4e4e4; }
+.inv-section:first-of-type { border-top: none; }
+.inv-artist-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .12s; }
+.inv-artist-bar:hover { background: #f8f8f6; }
+.inv-acode { font-size: 11px; font-weight: 600; color: #777; min-width: 20px; flex-shrink: 0; }
+.inv-anome { font-weight: 500; color: #111; }
 .inv-aarte { font-size: 11px; color: #666; }
-.inv-astats { font-size: 11px; color: #666; text-align: right; flex-shrink: 0; }
-.inv-table { width: 100%; border-collapse: collapse; }
-.inv-table th { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: #666; padding: 7px 14px; text-align: left; background: #f8f8f6; border-top: 1px solid #ececea; }
-.inv-table td { padding: 8px 14px; border-top: 1px solid #f4f4f2; font-size: 12px; color: #333; }
-.inv-table tbody tr:hover td { background: #f8f8f6; }
+.inv-astats { font-size: 11px; color: #666; flex-shrink: 0; }
+.inv-artigo-row { display: grid; grid-template-columns: 90px 1fr 90px 80px 80px; align-items: center; }
+.inv-artigo-row > span { padding: 8px 14px; border-top: 1px solid #f2f2f0; font-size: 12px; color: #333; background: #fafaf8; transition: background .1s; }
+.inv-artigo-row:hover > span { background: #f4f4f2; }
 .stk { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 18px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #ececea; padding: 0 5px; color: #444; }
 .stk.low { background: #fff3e0; color: #7a3300; }
 .stk.zero { background: #fce8e8; color: #900; }
@@ -278,6 +281,7 @@ export default function Admin() {
     setArtistas(a || []);
     setArtigos(ar || []);
     setVendas(v || []);
+    setExpanded(new Set((a || []).map(x => x.id)));
     setLoading(false);
   };
 
@@ -857,55 +861,51 @@ export default function Admin() {
             {page === "inventario" && <>
               <div className="page-hdr"><div className="page-title">Inventário</div></div>
               <div className="content">
-                {artistas.map(ar => {
-                  const arts  = artigos.filter(a => a.artista_id === ar.id);
-                  const isExp = expanded.has(ar.id);
-                  const nVendas = grupos.filter(g => g.itens.some(i => i.artista && i.artista.id === ar.id)).length;
-                  return (
-                    <div key={ar.id} className="inv-artista">
-                      <div className="inv-ahdr" onClick={() => toggleExp(ar.id)}>
-                        <span className="inv-acode">{p2(ar.codigo)}</span>
-                        <span className="inv-anome">{ar.nome}</span>
-                        {ar.nome_artistico && <span className="inv-aarte">{ar.nome_artistico}</span>}
-                        <span className="inv-astats">{arts.length} artigos · {nVendas} vendas</span>
-                        {isExp ? <ChevU /> : <ChevD />}
+                <div className="inv-container">
+                  <div className="inv-hdr-row">
+                    <span>Código</span>
+                    <span>Título</span>
+                    <span style={{textAlign:"right"}}>Preço</span>
+                    <span style={{textAlign:"center"}}>Stock</span>
+                    <span style={{textAlign:"right"}}>Vendido</span>
+                  </div>
+                  {artistas.map(ar => {
+                    const arts    = artigos.filter(a => a.artista_id === ar.id);
+                    const isExp   = expanded.has(ar.id);
+                    const nVendas = grupos.filter(g => g.itens.some(i => i.artista && i.artista.id === ar.id)).length;
+                    return (
+                      <div key={ar.id} className="inv-section">
+                        <div className="inv-artist-bar" onClick={() => toggleExp(ar.id)}>
+                          <span className="inv-acode">{p2(ar.codigo)}</span>
+                          <span className="inv-anome">{ar.nome}</span>
+                          {ar.nome_artistico && <span className="inv-aarte">&nbsp;· {ar.nome_artistico}</span>}
+                          <span style={{flex:1}} />
+                          <span className="inv-astats">{arts.length} artigos · {nVendas} vendas</span>
+                          <span style={{display:"flex",color:"#bbb",marginLeft:6}}>{isExp ? <ChevU /> : <ChevD />}</span>
+                        </div>
+                        {isExp && arts.map(ar2 => {
+                          const stock   = ar2.oferta ? null : stockOf(ar2.id);
+                          const vendido = ar2.oferta ? 0 : (ar2.quantidade - stock);
+                          return (
+                            <div key={ar2.id} className="inv-artigo-row">
+                              <span style={{fontSize:11,fontWeight:600,color:"#888",paddingLeft:28}}>{mkCode(ar.codigo, ar2.codigo)}</span>
+                              <span style={{fontWeight:500,color:"#111"}}>{ar2.titulo}</span>
+                              <span style={{textAlign:"right",color:"#444"}}>{ar2.oferta ? "—" : `€${fmt(ar2.preco)}`}</span>
+                              <span style={{textAlign:"center"}}>
+                                {ar2.oferta
+                                  ? <span className="oferta-pill">oferta</span>
+                                  : <span className={`stk${stock===0?" zero":stock<=2?" low":""}`}>{stock}</span>}
+                              </span>
+                              <span style={{textAlign:"right",color:vendido>0?"#2a5a1a":"#bbb",fontWeight:vendido>0?500:400}}>
+                                {ar2.oferta ? "—" : vendido}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {isExp && (
-                        <table className="inv-table">
-                          <thead>
-                            <tr>
-                              <th>Código</th><th>Título</th>
-                              <th style={{textAlign:"right"}}>Preço</th>
-                              <th style={{textAlign:"center"}}>Stock</th>
-                              <th style={{textAlign:"right"}}>Vendido</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {arts.map(ar2 => {
-                              const stock   = ar2.oferta ? null : stockOf(ar2.id);
-                              const vendido = ar2.oferta ? 0 : (ar2.quantidade - stock);
-                              return (
-                                <tr key={ar2.id}>
-                                  <td style={{fontSize:11,fontWeight:600,color:"#777"}}>{mkCode(ar.codigo, ar2.codigo)}</td>
-                                  <td style={{fontWeight:500}}>{ar2.titulo}</td>
-                                  <td style={{textAlign:"right"}}>{ar2.oferta ? "—" : `€${fmt(ar2.preco)}`}</td>
-                                  <td style={{textAlign:"center"}}>
-                                    {ar2.oferta
-                                      ? <span className="oferta-pill">oferta</span>
-                                      : <span className={`stk${stock===0?" zero":stock<=2?" low":""}`}>{stock}</span>}
-                                  </td>
-                                  <td style={{textAlign:"right",color:vendido>0?"#2a5a1a":"#bbb",fontWeight:vendido>0?500:400}}>
-                                    {ar2.oferta ? "—" : vendido}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </>}
 
