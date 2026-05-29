@@ -11,7 +11,6 @@ const supabase = createClient(
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');`;
 
-const CATEGORIAS = ["Ilustração","Desenho","Pintura","Design Gráfico","Livro / Publicação","Fotografia","Outra"];
 const COMM = 0.10;
 const pad = n => String(n).padStart(2, "0");
 const mkObra = () => ({ id:`${Date.now()}-${Math.random().toString(36).slice(2)}`, titulo:"", categoria:"", preco:"", quantidade:"1", descricao:"", observacoes:"", oferta:false, open:true });
@@ -250,7 +249,6 @@ export default function ObscenaPortal() {
     if (!open) return true;
     const e = {}, id = open.id;
     if (!open.titulo.trim())                        e[`${id}_t`] = "Obrigatório";
-    if (!open.categoria)                            e[`${id}_c`] = "Obrigatório";
     if (!open.oferta && (!open.preco || +open.preco <= 0)) e[`${id}_p`] = "Preço inválido";
     if (!open.quantidade || +open.quantidade < 1)   e[`${id}_q`] = "Mín. 1";
     if (!open.descricao.trim())                     e[`${id}_d`] = "Obrigatório";
@@ -348,9 +346,9 @@ export default function ObscenaPortal() {
       ["Contacto", artista.contacto],
       ["", ""],
       ["INVENTÁRIO — OBSCENA"],
-      ["Nº","Título","Categoria","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
+      ["Nº","Título","Tipo","Preço público (€)",`Valor artista ${(1-COMM)*100}% (€)`,"Quantidade","Total artista (€)","Descrição","Observações"],
       ...obras.map((o,i) => [
-        i+1, o.titulo, o.categoria,
+        i+1, o.titulo,
         o.oferta ? "Oferta" : "Venda",
         o.oferta ? "—" : (parseFloat(o.preco)||0),
         o.oferta ? "—" : parseFloat(artistShare(o.preco)),
@@ -367,7 +365,7 @@ export default function ObscenaPortal() {
       ["Total para artista (€)", totalParaArtista.toFixed(2)],
     ];
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{wch:20},{wch:32},{wch:20},{wch:10},{wch:18},{wch:22},{wch:12},{wch:18},{wch:40},{wch:30}];
+    ws["!cols"] = [{wch:20},{wch:32},{wch:10},{wch:18},{wch:22},{wch:12},{wch:18},{wch:40},{wch:30}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventário");
     const slug = (artista.nomeArtistico||artista.nome||"artista").replace(/\s+/g,"_").toLowerCase();
@@ -523,34 +521,24 @@ export default function ObscenaPortal() {
                             {errors[`${obra.id}_t`] && <div className="em">{errors[`${obra.id}_t`]}</div>}
                           </div>
 
-                          <div className="g3">
+                          <div style={{display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:14, alignItems:"center"}}>
                             <div className="fld" style={{marginBottom:0}}>
-                              <label className="lbl">Categoria <span className="req">*</span></label>
-                              <select className={`sel${errors[`${obra.id}_c`]?" e":""}`} value={obra.categoria} onChange={e=>setO(obra.id,"categoria",e.target.value)}>
-                                <option value="">Selecionar...</option>
-                                {CATEGORIAS.map(c=><option key={c} value={c}>{c}</option>)}
-                              </select>
-                              <div style={{minHeight:18}}>{errors[`${obra.id}_c`] && <div className="em">{errors[`${obra.id}_c`]}</div>}</div>
-                            </div>
-
-                            <div className="fld" style={{marginBottom:0}}>
-                              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6}}>
-                                <span className="lbl" style={{margin:0}}>{obra.oferta ? <span style={{color:"#bbb"}}>Preço (€)</span> : <>Preço público (€) <span className="req">*</span></>}</span>
-                                <span className={`oferta-chk-label${obra.oferta?" on":""}`} onClick={() => setO(obra.id, "oferta", !obra.oferta)}>
-                                  <span className={`oferta-chk${obra.oferta?" on":""}`}>{obra.oferta && <Ic.Check />}</span>
-                                  Oferta
-                                </span>
-                              </div>
+                              <label className="lbl">{obra.oferta ? <span style={{color:"#bbb"}}>Preço (€)</span> : <>Preço público (€) <span className="req">*</span></>}</label>
                               {obra.oferta ? (
                                 <div style={{padding:"10px 14px", background:"#f0f0ee", borderRadius:8, fontSize:13, color:"#bbb"}}>—</div>
                               ) : (
                                 <>
                                   <input className={`inp${errors[`${obra.id}_p`]?" e":""}`} type="number" min="0" step="0.5" value={obra.preco} onChange={e=>setO(obra.id,"preco",e.target.value)} placeholder="25.00" />
-                                  <div className="hint" style={{minHeight:18}}>Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
+                                  <div className="hint">Recebes <strong>€{artistShare(obra.preco || 0)}</strong> por peça</div>
                                 </>
                               )}
                               {errors[`${obra.id}_p`] && !obra.oferta && <div className="em">{errors[`${obra.id}_p`]}</div>}
                             </div>
+
+                            <span className={`oferta-chk-label${obra.oferta?" on":""}`} onClick={() => setO(obra.id, "oferta", !obra.oferta)}>
+                              <span className={`oferta-chk${obra.oferta?" on":""}`}>{obra.oferta && <Ic.Check />}</span>
+                              Oferta
+                            </span>
 
                             <div className="fld" style={{marginBottom:0}}>
                               <label className="lbl">Quantidade <span className="req">*</span></label>
@@ -642,7 +630,7 @@ export default function ObscenaPortal() {
                         }
                       </div>
                       {!o.oferta && <div className="rev-obra-share">Recebes €{artistShare(o.preco)} por peça</div>}
-                      <div className="rev-obra-meta">{o.categoria}{o.oferta ? "" : ""} · {o.quantidade} {o.quantidade===1||o.quantidade==="1"?"peça":"peças"}</div>
+                      <div className="rev-obra-meta">{o.quantidade} {o.quantidade===1||o.quantidade==="1"?"peça":"peças"}</div>
                       <div className="rev-obra-desc">{o.descricao}</div>
                       {o.observacoes && <div className="rev-obra-obs">Obs: {o.observacoes}</div>}
                     </div>
